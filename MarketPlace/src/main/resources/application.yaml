@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: rest-postgres
+    password: rest-postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  kafka:
+    bootstrap-servers:
+
+server:
+  port: 8081
+
+
+
+redis:
+  host-name: ${REDIS_HOST}
+#      hostName: ${REDIS_HOSTS}
+#      port: ${REDIS_PORT}

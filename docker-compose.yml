@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  marketplace:
+    build:
+      context: /marketplace
+      dockerfile: Dockerfile
+    container_name: marketplace
+    ports:
+      - '8081:8081'
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/Rest
+      - REDIS_HOST=redis:6379
+    depends_on:
+      - db_pg_marketplace
+      - redis
+
+  db_pg_marketplace:
+    image: postgres:15-alpine
+    container_name: db_marketplace
+    ports:
+      - '15432:5432'
+    environment:
+      POSTGRES_DB: Rest
+      POSTGRES_USER: rest-postgres
+      POSTGRES_PASSWORD: rest-postgres
+
+  order_service:
+    build:
+      context: /OrderService
+      dockerfile: Dockerfile
+    container_name: marketplace
+    ports:
+      - '8082:8082'
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/Rest
+      - REDIS_HOST=redis:6379
+    depends_on:
+      - db_pg_order
+      - redis
+
+  db_pg_order:
+    image: postgres:15-alpine
+    container_name: db_order
+    ports:
+      - '15433:5432'
+    environment:
+      POSTGRES_DB: Rest
+      POSTGRES_USER: rest-postgres
+      POSTGRES_PASSWORD: rest-postgres
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: kafka-ui
+      ports:
+        - "8088:8088"
+      environment:
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      depends_on:
+        - kafka
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis
+    hostname: redis-master
+    ports:
+      - '6379:6379'
+    deploy:
+      replicas: 1
+
+volumes:
+  kafka-data:
+
+
+
