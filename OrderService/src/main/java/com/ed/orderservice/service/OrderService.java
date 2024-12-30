@@ -2,7 +2,7 @@ package com.ed.orderservice.service;
 
 import com.ed.orderservice.entity.Invoice;
 import com.ed.orderservice.entity.enums.StatusInvoice;
-import com.ed.orderservice.entity.kafka.KafkaMessage;
+import com.ed.orderservice.entity.kafka.MessageForProcessingOrder;
 import com.ed.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,13 +31,13 @@ public class OrderService {
 
     @KafkaListener(topics = "OrdersFromMarketPlace", groupId = "main_group_order")
     @Transactional
-    public void acceptTheOrderForProcessing(@Payload KafkaMessage kafkaMessage){
+    public void acceptTheOrderForProcessing(@Payload MessageForProcessingOrder messageForProcessingOrder) {
 
         // проверка ключа, нужна ли?
         Invoice order = new Invoice();
-        order.setIdInMarketplaceService(kafkaMessage.getOrderIdFromDBMarketplace());
-        order.setOwnerEmail(kafkaMessage.getOwnerEmail());
-        order.setTotalAmount(kafkaMessage.getTotalAmountOrder());
+        order.setIdInMarketplaceService(messageForProcessingOrder.getOrderIdFromDBMarketplace());
+        order.setOwnerEmail(messageForProcessingOrder.getOwnerEmail());
+        order.setTotalAmount(messageForProcessingOrder.getTotalAmountOrder());
         order.setInvoiceDate(Instant.now());
         order.setInvoiceStatus(StatusInvoice.PROCESSING);
 
@@ -47,12 +46,11 @@ public class OrderService {
 
 
     @Transactional
-    @Async
     @Scheduled(fixedRate = 10000)
-    public void changeStatusInOrder(){
+    public void changeStatusInOrder() {
 
         Invoice openInvoice = orderRepository.findByInvoiceStatusAndAsc(StatusInvoice.PROCESSING.toString()).orElseGet(null);
-        if(openInvoice == null){
+        if (openInvoice == null) {
             logger.info("Invoice not found");
             return;
         }

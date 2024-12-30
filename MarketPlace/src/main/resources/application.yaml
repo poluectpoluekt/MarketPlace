@@ -18,7 +18,12 @@ spring:
     baseline-version: 0
 
   kafka:
-    bootstrap-servers:
+    bootstrap-servers: ${KAFKA_HOST}
+    consumer:
+      auto-commit-interval: 100
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+      max-poll-records: 3
 
 server:
   port: 8081

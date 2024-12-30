@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
@@ -21,27 +21,27 @@ public class SecurityConfig {
     private static final String[] WHITE_LIST = {"/api/signup", "/login"};
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            .httpBasic(Customizer.withDefaults())
-            .sessionManagement(secSessionManConf -> secSessionManConf.sessionCreationPolicy(SessionCreationPolicy.ALWAYS) )
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(WHITE_LIST).permitAll()
-                    .anyRequest().authenticated())
-            .logout(l -> l.logoutUrl("/login").clearAuthentication(true).invalidateHttpSession(true));
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(secSessionManConf -> secSessionManConf.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(WHITE_LIST).permitAll()
+                        .anyRequest().authenticated())
+                .logout(l -> l.logoutUrl("/login").clearAuthentication(true).invalidateHttpSession(true));
 
         return http.build();
     }
 
 
     @Bean
-    public DaoAuthenticationProvider authProvider(UserDetailsService userDetailsService, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public DaoAuthenticationProvider authProvider(UserDetailsService userDetailsService, Argon2PasswordEncoder passwordEncoder) {
 
         DaoAuthenticationProvider daoAutProvider = new DaoAuthenticationProvider();
         daoAutProvider.setUserDetailsService(userDetailsService);
-        daoAutProvider.setPasswordEncoder(bCryptPasswordEncoder);
+        daoAutProvider.setPasswordEncoder(passwordEncoder);
 
         return daoAutProvider;
 

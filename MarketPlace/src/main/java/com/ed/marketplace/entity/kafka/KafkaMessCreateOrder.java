@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class KafkaMessage {
+public class KafkaMessCreateOrder {
 
     private String idempotencyKeyMessage;
     private long OrderIdFromDBMarketplace;

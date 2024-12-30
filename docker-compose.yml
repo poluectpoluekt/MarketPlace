@@ -11,9 +11,11 @@ services:
     environment:
       - DB_URL=jdbc:postgresql://db:5432/Rest
       - REDIS_HOST=redis:6379
+      - KAFKA_HOST=kafka:9092
     depends_on:
       - db_pg_marketplace
       - redis
+      - kafka
 
   db_pg_marketplace:
     image: postgres:15-alpine
@@ -38,6 +40,7 @@ services:
     depends_on:
       - db_pg_order
       - redis
+      - kafka
 
   db_pg_order:
     image: postgres:15-alpine
@@ -72,15 +75,15 @@ services:
       - kafka-data:/var/lib/kafka/data
 
   kafka-ui:
-      image: provectuslabs/kafka-ui:latest
-      container_name: kafka-ui
-      ports:
-        - "8088:8088"
-      environment:
-        KAFKA_CLUSTERS_0_NAME: local
-        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      depends_on:
-        - kafka
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8088:8088"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
 
   redis:
     image: redis:7.0-alpine

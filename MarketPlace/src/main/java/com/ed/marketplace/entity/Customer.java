@@ -6,18 +6,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
 @Table(name = "Customer")
 @NoArgsConstructor
 @Entity
-public class Customer implements UserDetails {
+public class Customer {
 
     @Id
     @Column(name = "customer_id")
@@ -44,8 +45,8 @@ public class Customer implements UserDetails {
     )
     private Set<Role> roles = new HashSet<>();
 
-    @Transient
-    private Collection<? extends GrantedAuthority> authorities;
+//    @Transient
+//    private Collection<? extends GrantedAuthority> authorities;
 
     @CreatedDate
     @Temporal(TemporalType.DATE)
@@ -64,7 +65,7 @@ public class Customer implements UserDetails {
     @Column(name = "is_enabled")
     private boolean isEnabled;
 
-    @ManyToMany()
+    @ManyToMany
     @JoinTable(
             name = "Customer_Item",
             joinColumns = @JoinColumn(name = "customer_id"),
@@ -74,35 +75,5 @@ public class Customer implements UserDetails {
 
     @OneToMany(mappedBy = "customerOwner")
     private List<Order> ordersHistory = new ArrayList<>();
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return isAccountNonExpired;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return isAccountNonLocked;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return isCredentialsNonExpired;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isEnabled;
-    }
 
 }

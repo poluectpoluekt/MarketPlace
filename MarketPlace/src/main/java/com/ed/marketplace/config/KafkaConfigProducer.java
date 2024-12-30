@@ -1,15 +1,14 @@
 package com.ed.marketplace.config;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import com.ed.marketplace.entity.kafka.KafkaMessage;
+import com.ed.marketplace.entity.kafka.KafkaMessCreateOrder;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -20,18 +19,22 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-@RequiredArgsConstructor
 @Configuration
 public class KafkaConfigProducer {
 
     @Value("${spring.kafka.bootstrap-servers}")
-    private String servers;
+    private final String servers;
 
+    @Autowired
+    public KafkaConfigProducer(@Value("${spring.kafka.bootstrap-servers}") String servers) {
+        this.servers = servers;
+    }
 
     @Bean
-    public ProducerFactory<String, KafkaMessage> producerFactory(){
+    public ProducerFactory<String, KafkaMessCreateOrder> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        // эти настройки тоже лучше вынести?
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.LINGER_MS_CONFIG, 10);
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
@@ -45,12 +48,12 @@ public class KafkaConfigProducer {
     }
 
     @Bean
-    public KafkaTemplate<String, KafkaMessage> kafkaTemplate(ProducerFactory<String, KafkaMessage> producerFactory){
+    public KafkaTemplate<String, KafkaMessCreateOrder> kafkaTemplate(ProducerFactory<String, KafkaMessCreateOrder> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
-    public NewTopic topic(){
+    public NewTopic topic() {
         return TopicBuilder.name("OrdersFromMarketPlace")
                 .partitions(3)
                 .replicas(1)

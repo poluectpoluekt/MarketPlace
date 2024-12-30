@@ -1,6 +1,7 @@
-package com.ed.marketplace.entity;
+package com.ed.marketplace.app_class;
 
 
+import com.ed.marketplace.entity.Item;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

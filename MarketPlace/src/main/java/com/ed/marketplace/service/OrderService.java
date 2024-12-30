@@ -1,22 +1,20 @@
 package com.ed.marketplace.service;
 
+import com.ed.marketplace.app_class.redis.OrderIdempotencyResponse;
 import com.ed.marketplace.entity.Customer;
 import com.ed.marketplace.entity.Item;
 import com.ed.marketplace.entity.Order;
 import com.ed.marketplace.entity.enums.OrderStatus;
-import com.ed.marketplace.entity.kafka.ItemDataForOrder;
-import com.ed.marketplace.entity.kafka.KafkaMessage;
-import com.ed.marketplace.exception.ErrorCreatedInvoiceBasketIsNull;
+import com.ed.marketplace.entity.kafka.KafkaMessCreateOrder;
+import com.ed.marketplace.exception.ErrorCreatedInvoiceBasketIsNullException;
 import com.ed.marketplace.exception.RepeatedIdempotencyKeyException;
 import com.ed.marketplace.mapper.ItemDataMapper;
 import com.ed.marketplace.repository.CustomerRepository;
 import com.ed.marketplace.repository.OrderRepository;
-import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -28,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 @AllArgsConstructor
 @Service
@@ -36,9 +33,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
-    private final KafkaTemplate<String, KafkaMessage> kafkaTemplate;
+    private final KafkaTemplate<String, KafkaMessCreateOrder> kafkaTemplate;
     private final NewTopic topicOrders;
-    private final RedisTemplate<String, String> redisTemplate;
     private final ItemDataMapper itemDataMapper;
     private final IdempotencyService idempotencyService;
     private final Logger logger = LoggerFactory.getLogger(OrderService.class);
@@ -53,56 +49,47 @@ public class OrderService {
     Создает сущность заказа, считает общую сумму
      */
     @Transactional
-    public BigDecimal createOrder(List<Item> basketItem, String keyIdempotency ) {
+    public BigDecimal createOrder(List<Item> basketItem, String keyIdempotency) {
 
         Authentication authCustomer = SecurityContextHolder.getContext().getAuthentication();
 
         if (basketItem == null) {
-            throw new ErrorCreatedInvoiceBasketIsNull();
+            throw new ErrorCreatedInvoiceBasketIsNullException();
         }
 
-        if(idempotencyService.idempotencyKeyCheck(keyIdempotency)){
+        if (idempotencyService.idempotencyKeyCheck(keyIdempotency)) {
             throw new RepeatedIdempotencyKeyException();
         }
 
         Order order = new Order();
 
         Customer customer = customerRepository.findByEmail(authCustomer.getName())
-                .orElseThrow(()-> new UsernameNotFoundException(authCustomer.getName()));
-
-        order.setCustomerOwner(customer);
+                .orElseThrow(() -> new UsernameNotFoundException(authCustomer.getName()));
 
         //List<Item> items = (List<Item>) session.getAttribute("basket");
 
-        order.setItemsOnOrder(basketItem);
-
-        order.setOrderStatus(OrderStatus.PENDING);
-
         BigDecimal totalPriceItemsInOrder = BigDecimal.ZERO;
-
         basketItem.forEach(i -> totalPriceItemsInOrder.add(i.getPriceItem()));
 
+        order.setCustomerOwner(customer);
+        order.setItemsOnOrder(basketItem);
+        order.setOrderStatus(OrderStatus.PENDING);
         order.setTotalAmountOrder(totalPriceItemsInOrder);
 
         //List<ItemDataForOrder> listForOrderService = items.stream().map(itemDataMapper::itemToItemDataForOrder).toList();
 
-        KafkaMessage newMessage = new KafkaMessage();
+        KafkaMessCreateOrder newMessageForProcessingOrder = new KafkaMessCreateOrder();
+        newMessageForProcessingOrder.setOrderIdFromDBMarketplace(orderRepository.save(order).getId());
+        newMessageForProcessingOrder.setTotalAmountOrder(totalPriceItemsInOrder);
+        newMessageForProcessingOrder.setOwnerEmail(order.getCustomerOwner().getEmail());
 
         //String idempotencyKey = getIdempotencyKey(String.valueOf(customer.getId()), "");
+        //newMessageForProcessingOrder.setIdempotencyKeyMessage(idempotencyKey);
+        //newMessageForProcessingOrder.setListCodeItemsForDBFromOrder(listForOrderService);
+        //Pageable pageable = PageRequest.of(0, basketItem.size());
+        kafkaTemplate.send(topicOrders.name(), newMessageForProcessingOrder);
 
-        //newMessage.setIdempotencyKeyMessage(idempotencyKey);
-
-        newMessage.setOrderIdFromDBMarketplace(orderRepository.save(order).getId());
-
-        newMessage.setTotalAmountOrder(totalPriceItemsInOrder);
-
-        newMessage.setOwnerEmail(order.getCustomerOwner().getEmail());
-
-        //newMessage.setListCodeItemsForDBFromOrder(listForOrderService);
-
-        //redisTemplate.opsForValue().set(); ключ REST-запроса
-
-        kafkaTemplate.send(topicOrders.name(), newMessage);
+        idempotencyService.saveIdempotencyKey(keyIdempotency, new OrderIdempotencyResponse(totalPriceItemsInOrder), 3600);
 
         return order.getTotalAmountOrder();
     }
@@ -114,8 +101,7 @@ public class OrderService {
     @KafkaListener(topics = "AlertClosedInvoiceFromOrderService", groupId = "main_group_order")
     @Transactional
     public void changeStatusOfOrder(@Payload long idInvoice) {
-
-
+        
         Order order = orderRepository.findById(idInvoice).orElse(null);
         if (order == null) {
             logger.info("Error found order");
@@ -125,6 +111,9 @@ public class OrderService {
         orderRepository.save(order);
     }
 
+//    public void returnResult(String idempotencyKey) {
+//        return redisTemplate.opsForValue().get(idempotencyKey);
+//    }
 
 
 }

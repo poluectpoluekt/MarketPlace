@@ -6,15 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class KafkaMessage {
+public class MessageForProcessingOrder {
 
     private String idempotencyKeyMessage;
     private long OrderIdFromDBMarketplace;

@@ -1,4 +1,4 @@
-package com.ed.marketplace.exception.response;
+package com.ed.marketplace.advice.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

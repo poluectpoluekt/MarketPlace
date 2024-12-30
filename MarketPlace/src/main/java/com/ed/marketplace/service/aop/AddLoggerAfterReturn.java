@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AddLoggerAfterReturn {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 
     @After("execution(* com.ed.marketplace.service.CustomerService(..))")
     public void afterReturning(JoinPoint returnValue) {
-        logger.info("Value return was - " + returnValue);
+        logger.info(String.format("Value return was - %s", returnValue));
     }
 }

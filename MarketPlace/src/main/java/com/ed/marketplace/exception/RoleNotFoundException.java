@@ -1,9 +1,9 @@
 package com.ed.marketplace.exception;
 
-public class RoleNotFoundException extends RuntimeException{
+public class RoleNotFoundException extends RuntimeException {
 
     public RoleNotFoundException(String roleName) {
 
-        super("Role " + roleName + " not found");
+        super(String.format("Role %s not found", roleName));
     }
 }

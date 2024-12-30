@@ -1,6 +1,6 @@
 package com.ed.orderservice.config;
 
-import com.ed.orderservice.entity.kafka.KafkaMessage;
+import com.ed.orderservice.entity.kafka.MessageForProcessingOrder;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -26,7 +26,7 @@ public class KafkaConfigConsumer {
 
 
     @Bean
-    public ConsumerFactory<String, KafkaMessage> consumerFactory(){
+    public ConsumerFactory<String, MessageForProcessingOrder> consumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -34,12 +34,12 @@ public class KafkaConfigConsumer {
         configProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, 100);
         configProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 3);
 
-        return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), new JsonDeserializer<>(KafkaMessage.class));
+        return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), new JsonDeserializer<>(MessageForProcessingOrder.class));
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, KafkaMessage> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, KafkaMessage> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, MessageForProcessingOrder> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, MessageForProcessingOrder> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         return factory;

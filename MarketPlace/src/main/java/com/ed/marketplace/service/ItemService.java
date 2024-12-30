@@ -1,23 +1,20 @@
 package com.ed.marketplace.service;
 
+import com.ed.marketplace.app_class.redis.ItemIdempotencyResponse;
 import com.ed.marketplace.dto.ItemToBasketDto;
-import com.ed.marketplace.entity.CustomerDataBasketInRedis;
 import com.ed.marketplace.entity.Item;
+import com.ed.marketplace.exception.BasketIsNullException;
 import com.ed.marketplace.exception.ItemNotFoundByTitleException;
-import com.ed.marketplace.exception.NotEnoughOnStock;
-import com.ed.marketplace.exception.RepeatedIdempotencyKeyException;
+import com.ed.marketplace.exception.NotEnoughOnStockException;
 import com.ed.marketplace.repository.ItemRepository;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -34,39 +31,46 @@ public class ItemService {
 
     /*
     добавление товара в корзину.
-    проверка ключа идемпотентсности
-    проверка наличия товара
-    поиск товара поимени и добавление в лист
+    поиск товара в БД - 44 строка
+    проверка наличия товара - 50 строка
+    товар добавляется в лист добавление в лист
      */
     @Transactional
-    public List<Item> addProductToBasket(ItemToBasketDto itemToBasketDto, List<Item> basket ) {
+    public List<Item> addProductToBasket(ItemToBasketDto itemToBasketDto, List<Item> basket, String keyIdempotency) {
 
-        if(idempotencyService.idempotencyKeyCheck(itemToBasketDto.getKeyIdempotency())){
-            throw new RepeatedIdempotencyKeyException(); // нужно ли отдавать ключ, который повторился?
+//        if (itemRepository.amountOnWarehouse(itemToBasketDto.getTitle()) < 1) {
+//            throw new NotEnoughOnStockException(itemToBasketDto.getTitle());
+//        }
+
+        Item item = itemRepository.findById(itemToBasketDto.getId())
+                .orElseThrow(() -> new ItemNotFoundByTitleException(itemToBasketDto.getTitle()));
+
+        if (item.getItemOnWarehouse() < 1) { //проверка на наличие товара на складе
+            throw new NotEnoughOnStockException(itemToBasketDto.getTitle());
         }
 
-        if(itemRepository.amountOnWarehouse(itemToBasketDto.getTitle()) < 1){
-            throw new NotEnoughOnStock(itemToBasketDto.getTitle());
+        if (basket == null) {
+            basket = new ArrayList<>();
         }
 
-        if(basket == null){
-            Item item = itemRepository.findByTitle(itemToBasketDto.getTitle())
-                    .orElseThrow(() -> new ItemNotFoundByTitleException(itemToBasketDto.getTitle()));
+        basket.add(item);
 
-//            List<Item> list = new ArrayList<>(); //можно ли как-то написать покороче
-//            list.add(item);
-            basket.add(item);
-            return basket;
-        }
+        idempotencyService.saveIdempotencyKey(keyIdempotency,
+                new ItemIdempotencyResponse(String.format("Item %s added to basket", item.getTitle()), basket),
+                3600);
 
-        //List<Item> basket = (List<Item>) session.getAttribute("basket");
-
-        basket.add(itemRepository.findByTitle(itemToBasketDto.getTitle())
-                    .orElseThrow(() -> new ItemNotFoundByTitleException(itemToBasketDto.getTitle())));
-
-        idempotencyService.saveIdempotencyKey(itemToBasketDto.getKeyIdempotency(), UUID.randomUUID().toString(), 3600);
-
-        logger.info("Item added to Basket: {}", itemToBasketDto.getKeyIdempotency());
+//        return basket;
+//
+//
+//        //List<Item> basket = (List<Item>) session.getAttribute("basket");
+//
+//        basket.add(item);
+//
+//        idempotencyService.saveIdempotencyKey(keyIdempotency,
+//                new ItemIdempotencyResponse(String.format("Item %s added to basket", item.getTitle()), basket),
+//                3600);
+//
+//        logger.info("Item added to Basket: {}", keyIdempotency);
 
         return basket;
     }
@@ -74,22 +78,25 @@ public class ItemService {
     /*
     Удаление товара в корзину.
     проверка ключа идемпотентсности
-    удаление
      */
     @Transactional
-    public List<Item> removeProductToBasket(ItemToBasketDto itemToBasketDto, List<Item> basket) {
-
-        if(idempotencyService.idempotencyKeyCheck(itemToBasketDto.getKeyIdempotency())){
-            throw new RepeatedIdempotencyKeyException();
-        }
+    public List<Item> removeProductToBasket(ItemToBasketDto itemToBasketDto, List<Item> basket, String keyIdempotency) {
 
 //       if (session.isNew()){ return new ArrayList<>();}
 //
 //        List<Item> basket = (List<Item>) session.getAttribute("basket");
 
+        if (basket == null) {
+            throw new BasketIsNullException();
+        }
+
         basket.removeIf(item -> item.getTitle().equals(itemToBasketDto.getTitle()));
 
-        logger.info("Item remove to Basket: {}", itemToBasketDto.getKeyIdempotency());
+        idempotencyService.saveIdempotencyKey(keyIdempotency,
+                new ItemIdempotencyResponse(String.format("Item %s removed to basket", itemToBasketDto.getTitle()), basket),
+                3600);
+
+        logger.info("Item remove to Basket: {}", keyIdempotency);
 
         return basket;
     }

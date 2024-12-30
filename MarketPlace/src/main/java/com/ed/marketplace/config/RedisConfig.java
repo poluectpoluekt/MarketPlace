@@ -1,23 +1,20 @@
 package com.ed.marketplace.config;
 
-import com.ed.marketplace.entity.CustomerDataBasketInRedis;
-import lombok.RequiredArgsConstructor;
+import com.ed.marketplace.app_class.redis.BaseEntityForRedis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-
-import java.util.UUID;
 
 @Configuration
 public class RedisConfig {
 
-    //@Value("${redis.host-name}")
     private final String hostName;
 
-//    @Value("${spring.redis..jedis.port}")
 //    private final int port;
 
     @Autowired
@@ -26,17 +23,17 @@ public class RedisConfig {
     }
 
     @Bean
-    public JedisConnectionFactory jedisConnectionFactory() {
-        JedisConnectionFactory jedisConnFactory = new JedisConnectionFactory();
-        jedisConnFactory.setHostName(hostName);
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
+        redisConfig.setHostName(hostName);
         //jedisConnFactory.setPort(port);
-        return new JedisConnectionFactory();
+        return new LettuceConnectionFactory(redisConfig);
     }
 
     @Bean
-    public RedisTemplate<String, String> redisTemplate(){
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(jedisConnectionFactory());
+    public RedisTemplate<String, BaseEntityForRedis> redisTemplate() {
+        RedisTemplate<String, BaseEntityForRedis> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory());
         return template;
 
     }

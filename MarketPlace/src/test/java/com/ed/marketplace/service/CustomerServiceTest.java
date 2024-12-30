@@ -1,10 +1,10 @@
 package com.ed.marketplace.service;
 
 import com.ed.marketplace.dto.CustomerRegistrationDto;
+import com.ed.marketplace.dto.CustomerResponseDto;
 import com.ed.marketplace.entity.Customer;
 import com.ed.marketplace.repository.CustomerRepository;
 import jakarta.inject.Inject;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,8 +13,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -26,19 +24,19 @@ class CustomerServiceTest {
     CustomerRepository customerRepository;
 
     @Test
-    void createCustomer_whenCustomerNoExists_returnCustomerRegDto() {
+    void createCustomer_whenCustomerNoExists_returnCustomerResponseDto() {
 
         CustomerRegistrationDto customerRegDtoInput =
-                new CustomerRegistrationDto("first name", "middle name",null,
+                new CustomerRegistrationDto("first name", "middle name", null,
                         "customer@gmail.com", "password");
 
         Customer customer = new Customer();
 
-        CustomerRegistrationDto customerRegDtoResult = customerService.createCustomer(new CustomerRegistrationDto());
+        CustomerResponseDto customerRegDtoResult = customerService.createCustomer(new CustomerRegistrationDto(), "keyIdempotency");
 
         Mockito.when(customerRepository.findByEmail(customerRegDtoInput.getEmail())).thenReturn(Optional.empty());
 
-        CustomerRegistrationDto  expectedCustomerRegDto = new CustomerRegistrationDto();
+        CustomerResponseDto expectedCustomerRegDto = new CustomerResponseDto();
 
         Assertions.assertEquals(expectedCustomerRegDto, customerRegDtoResult);
 
