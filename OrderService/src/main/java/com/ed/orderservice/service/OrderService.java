@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -45,21 +46,37 @@ public class OrderService {
     }
 
 
+    /**
+     * старый метод
+     */
+//    @Transactional
+//    @Scheduled(fixedRate = 10000)
+//    public void changeStatusInOrder() {
+//
+//        Invoice openInvoice = orderRepository.findByInvoiceStatusAndAsc(StatusInvoice.PROCESSING.toString()).orElseGet(null);
+//        if (openInvoice == null) {
+//            logger.info("Invoice not found");
+//            return;
+//        }
+//
+//        openInvoice.setInvoiceStatus(StatusInvoice.PROCESSING);
+//        orderRepository.save(openInvoice);
+//        kafkaTemplate.send(topic.name(), openInvoice.getIdInMarketplaceService());
+//        // генерация ключа
+//        // kafka send
+//
+//    }
     @Transactional
     @Scheduled(fixedRate = 10000)
-    public void changeStatusInOrder() {
+    public void changeStatusInOrderForProcessing() {
+        List<Invoice> openInvoiceList = orderRepository.findFirst10ByInvoiceStatusOrderByInvoiceDateAsc(StatusInvoice.PROCESSING);
 
-        Invoice openInvoice = orderRepository.findByInvoiceStatusAndAsc(StatusInvoice.PROCESSING.toString()).orElseGet(null);
-        if (openInvoice == null) {
-            logger.info("Invoice not found");
-            return;
+        for (Invoice invoice : openInvoiceList) {
+            invoice.setInvoiceStatus(StatusInvoice.SENT);
+            orderRepository.save(invoice);
+            // генерация ключа
+            // сохранение в redis
+            kafkaTemplate.send(topic.name(), invoice.getIdInMarketplaceService());
         }
-
-        openInvoice.setInvoiceStatus(StatusInvoice.PROCESSING);
-        orderRepository.save(openInvoice);
-        kafkaTemplate.send(topic.name(), openInvoice.getIdInMarketplaceService());
-        // генерация ключа
-        // kafka send
-
     }
 }
