@@ -45,9 +45,6 @@ public class Customer {
     )
     private Set<Role> roles = new HashSet<>();
 
-//    @Transient
-//    private Collection<? extends GrantedAuthority> authorities;
-
     @CreatedDate
     @Temporal(TemporalType.DATE)
     @Column(name = "create_date")

@@ -18,7 +18,7 @@ import java.util.List;
 public class ItemIdempotencyResponse extends BaseEntityForRedis {
 
     private String responseResult;
-    private List<Item> itemInBasket = new ArrayList();
+    private List<Item> itemInBasket = new ArrayList<>();
 
 
 }

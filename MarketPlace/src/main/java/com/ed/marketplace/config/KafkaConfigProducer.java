@@ -22,25 +22,41 @@ import java.util.Map;
 @Configuration
 public class KafkaConfigProducer {
 
-    @Value("${spring.kafka.bootstrap-servers}")
     private final String servers;
+    private final String ACK_CONFIG;
+    private final int LINGER_MS_CONFIG;
+    private final String RETRIES_CONFIG;
+    private final String DELIVERY_TIMEOUT;
+    private final String REQUEST_TIMEOUT;
+    private final boolean ENABLE_IDEMPOTENCE;
 
     @Autowired
-    public KafkaConfigProducer(@Value("${spring.kafka.bootstrap-servers}") String servers) {
+    public KafkaConfigProducer(@Value("${spring.kafka.bootstrap-servers}") String servers,
+                               @Value("${spring.kafka.producer.ack}") String ackConfig,
+                               @Value("${spring.kafka.producer.linger-ms-config}") int lingerMsConfig,
+                               @Value("${spring.kafka.producer.retries}") String retriesConfig,
+                               @Value("${spring.kafka.producer.delivery-timeout}") String deliveryTimeout,
+                               @Value("${spring.kafka.producer.request-timeout}") String requestTimeout,
+                               @Value("${spring.kafka.producer.enable-idempotence}") boolean enableIdempotence) {
         this.servers = servers;
+        ACK_CONFIG = ackConfig;
+        LINGER_MS_CONFIG = lingerMsConfig;
+        RETRIES_CONFIG = retriesConfig;
+        DELIVERY_TIMEOUT = deliveryTimeout;
+        REQUEST_TIMEOUT = requestTimeout;
+        ENABLE_IDEMPOTENCE = enableIdempotence;
     }
 
     @Bean
     public ProducerFactory<String, KafkaMessCreateOrder> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        // эти настройки тоже лучше вынести?
-        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
-        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 10);
-        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
-        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120000);
-        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000);
-        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configProps.put(ProducerConfig.ACKS_CONFIG, ACK_CONFIG);
+        configProps.put(ProducerConfig.LINGER_MS_CONFIG, LINGER_MS_CONFIG);
+        configProps.put(ProducerConfig.RETRIES_CONFIG, RETRIES_CONFIG);
+        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, DELIVERY_TIMEOUT);
+        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, RETRIES_CONFIG);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, ENABLE_IDEMPOTENCE);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 

@@ -1,13 +1,13 @@
-package com.ed.marketplace;
+package com.ed.reportservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MarketPlaceApplication {
+public class ReportServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MarketPlaceApplication.class, args);
+        SpringApplication.run(ReportServiceApplication.class, args);
     }
 
 }

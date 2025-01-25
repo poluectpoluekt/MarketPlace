@@ -16,5 +16,5 @@ import java.math.BigDecimal;
 public class OrderIdempotencyResponse extends BaseEntityForRedis {
 
     BigDecimal totalAmountOrder;
-
+    
 }

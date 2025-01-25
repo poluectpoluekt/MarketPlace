@@ -2,17 +2,14 @@ package com.ed.marketplace.app_class;
 
 import com.ed.marketplace.entity.Customer;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Set;
 
 @Setter
-@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerDetails implements UserDetails {
@@ -22,7 +19,7 @@ public class CustomerDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Set.of();
+        return authorities;
     }
 
     @Override
