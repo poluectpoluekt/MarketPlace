@@ -19,6 +19,13 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_HOST}
+    producer:
+      ack: all
+      linger-ms-config: 10
+      retries: 3
+      delivery-timeout: 120000
+      request-timeout: 30000
+      enable-idempotence: true
     consumer:
       auto-commit-interval: 100
       auto-offset-reset: earliest
@@ -31,6 +38,6 @@ server:
 
 
 redis:
-  host-name: ${REDIS_HOST}
-#      hostName: ${REDIS_HOSTS}
+  host:
+    host_name: ${REDIS_HOST}
 #      port: ${REDIS_PORT}
