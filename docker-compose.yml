@@ -5,11 +5,11 @@ services:
     build:
       context: /marketplace
       dockerfile: Dockerfile
-    container_name: marketplace
+    container_name: marketplace_srv
     ports:
       - '8081:8081'
     environment:
-      - DB_URL=jdbc:postgresql://db:5432/Rest
+      - DB_URL=jdbc:postgresql://db_marketplace:5432/Rest
       - REDIS_HOST=redis:6379
       - KAFKA_HOST=kafka:9092
     depends_on:
@@ -31,11 +31,11 @@ services:
     build:
       context: /OrderService
       dockerfile: Dockerfile
-    container_name: marketplace
+    container_name: order_srv
     ports:
       - '8082:8082'
     environment:
-      - DB_URL=jdbc:postgresql://db:5432/Rest
+      - DB_URL=jdbc:postgresql://db_order:5432/Rest
       - REDIS_HOST=redis:6379
     depends_on:
       - db_pg_order
@@ -47,6 +47,31 @@ services:
     container_name: db_order
     ports:
       - '15433:5432'
+    environment:
+      POSTGRES_DB: Rest
+      POSTGRES_USER: rest-postgres
+      POSTGRES_PASSWORD: rest-postgres
+
+  report_service:
+    build:
+      context: /ReportService
+      dockerfile: Dockerfile
+    container_name: report_srv
+    ports:
+      - '8083:8083'
+    environment:
+      - DB_URL=jdbc:postgresql://db_report:5432/Rest
+    #      - REDIS_HOST=redis:6379
+    depends_on:
+      - db_pg_report
+      #      - redis
+      - kafka
+
+  db_pg_report:
+    image: postgres:15-alpine
+    container_name: db_report
+    ports:
+      - '15434:5432'
     environment:
       POSTGRES_DB: Rest
       POSTGRES_USER: rest-postgres

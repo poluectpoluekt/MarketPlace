@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DB_URL_}
+    url: ${DB_URL}
     username: rest-postgres
     password: rest-postgres
     driver-class-name: org.postgresql.Driver
